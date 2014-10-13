@@ -11,7 +11,7 @@ class RedisInstance
   attr_reader :host, :port
 
   def initialize(host: nil, port: nil, logger: Logger.new($stdout))
-    @host, @port, @logger = host, port, logger
+    @host, @port, @logger = host, (port || 6379), logger
   end
 
   def master!

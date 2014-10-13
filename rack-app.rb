@@ -5,6 +5,7 @@ require 'rack'
 require 'json'
 
 require_relative './lib'
+require_relative './resolver'
 
 class RedisDictatorRackApp
   def call(env)
@@ -25,10 +26,9 @@ class RedisDictatorRackApp
     def master(req)
       begin
         json = req.body.read
-        puts "DEBUG: #{json}"
         body = JSON.parse(json)
-        master = {host: body["master"]["address"], port: body["master"]["port"]}
-        slaves = body["slaves"].inject([]) { |acc, s| acc << {host: s["address"], port: s["port"] } }
+        master = resolve(host: body["master"]["address"], port: body["master"]["port"])
+        slaves = body["slaves"].inject([]) { |acc, s| acc << resolve(host: s["address"], port: s["port"]) }
         all = slaves.unshift(master)
         begin
           rg = RedisGroup.new(services: all)
@@ -41,6 +41,18 @@ class RedisDictatorRackApp
       rescue Exception => e
         $stderr.puts "#{e.class}: #{e.message}\n\t#{e.backtrace.join("\n\t")}"
         [400, {'Content-Type' => 'text/plain'}, ["#{e.class}: #{e.message}\n"]]
+      end
+    end
+
+    def resolve(host: nil, port: nil)
+      nameservers = (ENV['NAMESERVERS'] || '').split
+      searchlist = (ENV['SEARCHLIST'] || '').split
+      resolver = Resolver.new(nameservers: nameservers, searchlist: searchlist)
+      if host.nil? or host !~ /^[0-9.]$/
+        answer = resolver.resolve(host)
+        {host: answer.address, port: (port or answer.port)}
+      else
+        {host: host, port: port}
       end
     end
 end
