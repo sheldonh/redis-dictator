@@ -23,6 +23,9 @@ The algorithm is as follows:
 `rack-app.rb` takes no arguments or configuration. It listens for HTTP PUT to `/master`. It expects the body of the request
 to be a json representation of the desired redis topology (see example below).
 
+The `address` of an instance may be an IPv4 address or a name. If it is a name, and an SRV record is published for that name,
+the port from the SRV record will be used if port is ommitted from the JSON topology.
+
 ## Example
 
 ```
@@ -48,4 +51,22 @@ cat > topology.json <<EOF
 EOF
 
 curl -XPUT -d @topology.json http://127.0.0.1:8080/master
+```
+
+Here is an example that relies on SRV records instead:
+
+```
+{
+  "master": {
+    "address": "_redis._tcp.node-1.redis-1.docker"
+  },
+  "slaves": [
+    {
+      "address": "_redis._tcp.node-2.redis-1.docker"
+    },
+    {
+      "address": "_redis._tcp.node-3.redis-1.docker"
+    }
+  ]
+}
 ```
