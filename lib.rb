@@ -137,6 +137,7 @@ class RedisGroup
     master, slaves = master_and_slaves(service)
 
     slaves.each do |r|
+      @logger.info "checking current status of #{r}"
       if r.master?
         @logger.info "waiting for #{r} to flush to its slaves"
         r.reject_client_writes!
