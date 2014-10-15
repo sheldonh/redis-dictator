@@ -49,8 +49,11 @@ class RedisDictatorRackApp
       searchlist = (ENV['SEARCHLIST'] || '').split
       resolver = Resolver.new(nameservers: nameservers, searchlist: searchlist)
       if host.nil? or host !~ /^[0-9.]$/
-        answer = resolver.resolve(host)
-        {host: answer.address, port: (port or answer.port)}
+        if answer = resolver.resolve(host)
+          {host: answer.address, port: (port or answer.port)}
+        else
+          raise "can't resolve #{host}"
+        end
       else
         {host: host, port: port}
       end
